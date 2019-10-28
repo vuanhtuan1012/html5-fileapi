@@ -1,0 +1,195 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>HTML5 File API</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!--  Essential META Tags -->
+    <meta name="author" content="VU Anh Tuan">
+    <meta name="description" content="An example of using HTML5 file API from TLab">
+    <meta name="keywords" content="HTML5, FileAPI, TLab">
+
+	<meta property="og:title" content="HTML5 File API">
+	<meta property="og:description" content="An example of using HTML5 file API from TLab">
+	<meta property="og:image" content="https://avatars1.githubusercontent.com/u/11141683">
+	<meta property="og:url" content="https://github.com/vuanhtuan1012/html5-fileapi">
+	<meta property="og:site_name" content="TLab">
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link href="dashboard.css" rel="stylesheet">
+</head>
+<body>
+    <!--[if lte IE 9]>
+        <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience and security.</p>
+    <![endif]-->
+
+    <!-- Add your site or application content here -->
+    <!-- /* header -->
+    <nav class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0">
+		<a class="navbar-brand col-sm-3 col-md-1 mr-0" href="#">TLAB</a>
+	</nav>
+	<!-- header */ -->
+
+    <div class="container-fluid">
+		<div class="row">
+			<!-- /* left menu -->
+			<nav class="col-md-3 d-none d-md-block bg-light sidebar">
+				<div class="sidebar-sticky">
+					<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+						<span>Accessing File Information</span>
+						<div class="d-flex align-items-center text-muted"><span data-feather="info"></span></div>
+					</h6>
+					<ul class="nav flex-column mb-2">
+						<li class="nav-item">
+							<a class="nav-link" href="accessing_getinfo.html"><span data-feather="file"></span>Getting information about the file</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="accessing_multifile.html"><span data-feather="file-plus"></span>Working with multiple files</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="accessing_dragdrop.html"><span data-feather="move"></span>Using drag and drop</a>
+						</li>
+					</ul>
+					<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+						<span>Reading File Content</span>
+						<div class="d-flex align-items-center text-muted"><span data-feather="book-open"></span></div>
+					</h6>
+					<ul class="nav flex-column mb-2">
+						<li class="nav-item">
+							<a class="nav-link" href="reading_text.html"><span data-feather="file-text"></span>Reading file contents as text</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="reading_data.html"><span data-feather="image"></span>Reading file contents as a data URL</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link active" href="reading_handlers.html"><span data-feather="monitor"></span>Using File API event handlers</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="reading_slices.html"><span data-feather="zoom-in"></span>Reading file slices</a>
+						</li>
+					</ul>
+				</div>
+			</nav>
+			<!-- left menu */ -->
+
+			<main role="main" class="col-md-9 ml-sm-auto col-lg-9 pt-3 px-4">
+				<!-- /* title -->
+				<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+					<h1 class="h2">Using File API event handlers</h1>
+          		</div>
+          		<!-- title */ -->
+
+          		<!-- /* content -->
+          		<p class="lead" style="padding: 0 0 30px">
+          			<input type="file" id="selectedFile">
+          		</p>
+          		<h2>Upload Progress</h2>
+          		<div class="progress">
+					<div class="progress-bar bg-info" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="progressbar"></div>
+				</div>
+				<div class="my-3">
+					<button type="button" class="btn btn-info px-4 mr-2" id="upload">Upload</button>
+					<button type="button" class="btn btn-danger px-4" id="abort">Abort</button>
+				</div>
+				<h4 class="text-muted">States</h4>
+				<div class="bg-info rounded">
+          			<pre class="p-3 text-light" id="states"></pre>
+          		</div>
+
+				<script type="text/javascript">
+					var selectedFile = null;
+					var reader = null;
+
+				    function init() {
+				        // check to see if this browser supports the File APIs we need
+				        var hasFileAPI = (window.File && window.FileReader);
+				        if (!hasFileAPI) {
+				            alert("This browser doesn't support the File API");
+				            return;
+				        }
+				        // if the browser supports the necessary features, enable the UI
+				        document.getElementById("selectedFile").addEventListener("change", load);
+				        document.getElementById("upload").addEventListener("click", upload);
+				        document.getElementById("abort").addEventListener("click", abort);
+				    }
+
+				    function load(event) {
+				        selectedFile = event.target.files[0];
+				        document.getElementById('progressbar').style = "width: 0";
+				        document.getElementById('progressbar').innerText = "";
+				        document.getElementById("states").innerHTML = "";
+				    }
+				    function upload(event) {
+				    	if (selectedFile == null) return;
+
+				    	reader = new FileReader();
+				    	reader.onloadstart = loadFileStarted;
+				    	reader.onloadend = loadFileEnded;
+				    	reader.onload = fileLoaded;
+				    	reader.onerror = fileError;
+				    	reader.onprogress = fileProgress;
+				    	reader.onabort = fileAbort;
+				    	reader.readAsBinaryString(selectedFile);
+				    }
+
+				    function abort(event) {
+				    	if (reader) {
+				    		reader.abort();
+				    		reader = null;
+				    	}
+				    }
+
+				    function loadFileStarted(event) {
+				    	document.getElementById("states").innerHTML += "- reading file " + selectedFile.name + " started.\n"
+				    }
+
+				    function loadFileEnded(event) {
+				    	document.getElementById("states").innerHTML += "- reading file " + selectedFile.name + " has ended."
+				    }
+
+				    function fileLoaded(event) {
+				    	document.getElementById("states").innerHTML += "- reading file " + selectedFile.name + " loaded.\n"
+				    }
+
+				    function fileError(event) {
+				    	document.getElementById("states").innerHTML += "- reading file " + selectedFile.name + " has error occurred:"
+				    	switch (event.target.error.code) {
+							case event.target.error.NOT_FOUND_ERR:
+								document.getElementById("states").innerHTML += "File was not found.\n";
+								break;
+							case event.target.error.NOT_READABLE_ERR:
+								document.getElementById("states").innerHTML += "File was unreadable.\n";
+								break;
+						}
+				    }
+
+				    function fileProgress(event) {
+				    	if (event.lengthComputable){
+				    		var prog = Math.round(event.loaded*100/event.total);
+				    		var ele = document.getElementById('progressbar');
+				    		ele.style = "width: " + prog + "%";
+				    		ele.innerText = prog + "%";
+				    	}
+				    }
+
+				    function fileAbort(event) {
+				    	document.getElementById("states").innerHTML += "- reading file " + selectedFile.name + " has aborted.\n"
+				    }
+					window.addEventListener("load", init);
+				</script>
+          		<!-- content */ -->
+        	</main>
+		</div>
+	</div>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+	<script src="https://unpkg.com/feather-icons/dist/feather.min.js"></script>
+    <script type="text/javascript">
+		feather.replace()
+    </script>
+</body>
+</html>
